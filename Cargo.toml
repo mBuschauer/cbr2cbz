@@ -1,0 +1,8 @@
+[package]
+name = "cbr2cbz"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rand = "0.10.1"
+remove_dir_all = "1.0"

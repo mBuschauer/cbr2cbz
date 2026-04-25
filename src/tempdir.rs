@@ -1,0 +1,94 @@
+use std::env;
+use std::io::{self, Error, ErrorKind};
+use std::fmt;
+use std::fs;
+use std::path::{self, PathBuf, Path};
+use rand::RngExt;
+use rand::distr::Alphanumeric;
+
+pub struct TempDir {
+    path: Option<PathBuf>,
+}
+
+const NUM_RETRIES: u32 = 1 << 31;
+
+const NUM_RAND_CHARS: usize = 12;
+
+impl TempDir {
+    pub fn new(prefix: &str) -> io::Result<TempDir> {
+        TempDir::new_in(&env::temp_dir(), prefix)
+    }
+
+    pub fn new_in<P: AsRef<Path>>(tmpdir: P, prefix: &str) -> io::Result<TempDir> {
+        let storage;
+        let mut tmpdir = tmpdir.as_ref();
+        if !tmpdir.is_absolute() {
+            let cur_dir = env::current_dir()?;
+            storage = cur_dir.join(tmpdir);
+            tmpdir = &storage;
+            // return TempDir::new_in(&cur_dir.join(tmpdir), prefix);
+        }
+
+        for _ in 0..NUM_RETRIES {
+            let mut rng = rand::rng();
+            let suffix: String = rng.sample_iter(&Alphanumeric).take(NUM_RAND_CHARS).map(char::from).collect();
+            let leaf = if !prefix.is_empty() {
+                format!("{}.{}", prefix, suffix)
+            } else {
+                // If we're given an empty string for a prefix, then creating a
+                // directory starting with "." would lead to it being
+                // semi-invisible on some systems.
+                suffix
+            };
+            let path = tmpdir.join(&leaf);
+            match fs::create_dir(&path) {
+                Ok(_) => return Ok(TempDir { path: Some(path) }),
+                Err(ref e) if e.kind() == ErrorKind::AlreadyExists => {}
+                Err(e) => return Err(e),
+            }
+        }
+
+        Err(Error::new(ErrorKind::AlreadyExists,
+                       "too many temporary directories already exist"))
+    }
+
+    pub fn path(&self) -> &path::Path {
+        self.path.as_ref().unwrap()
+    }
+
+    pub fn into_path(mut self) -> PathBuf {
+        self.path.take().unwrap()
+    }
+
+    pub fn close(mut self) -> io::Result<()> {
+        let result = fs::remove_dir_all(self.path());
+
+        // Prevent the Drop impl from removing the dir a second time.
+        self.path = None;
+
+        result
+    }
+}
+
+impl AsRef<Path> for TempDir {
+    fn as_ref(&self) -> &Path {
+        self.path()
+    }
+}
+
+impl fmt::Debug for TempDir {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("TempDir")
+            .field("path", &self.path())
+            .finish()
+    }
+}
+
+impl Drop for TempDir {
+    fn drop(&mut self) {
+        // Path is `None` if `close()` or `into_path()` has been called.
+        if let Some(ref p) = self.path {
+            let _ =  fs::remove_dir_all(p);
+        }
+    }
+}
