@@ -56,10 +56,6 @@ impl TempDir {
         self.path.as_ref().unwrap()
     }
 
-    pub fn into_path(mut self) -> PathBuf {
-        self.path.take().unwrap()
-    }
-
     pub fn close(mut self) -> io::Result<()> {
         let result = fs::remove_dir_all(self.path());
 

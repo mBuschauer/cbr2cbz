@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 rand = "0.10.1"
 remove_dir_all = "1.0"
+unrar = "0.5.8"
+walkdir = "2.5.0"
+zip = "8.6.0"
