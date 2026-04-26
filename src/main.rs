@@ -91,6 +91,12 @@ where
 }
 
 fn main() {
+    let path = Path::new("./Invincible.cbr");
+
+    let filename = path.file_stem();
+    let extension = path.extension();
+    return;
+
     let tmp_dir = match TempDir::new("cbr2cbz") {
         Ok(t) => t,
         Err(e) => {

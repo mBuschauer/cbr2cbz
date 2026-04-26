@@ -2,6 +2,8 @@
 A rust-nix commandline tool to convert CBZ files to CBR
 
 ## Todo
+- [ ] Update the cbz function to create the file in the tmp dir
+  - [ ] After finished, copy the file over to correct dir
 - [ ] Add commandline inputs
   - [ ] Take input file name
     - [ ] Check that files exist
