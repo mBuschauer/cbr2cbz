@@ -30,7 +30,7 @@ impl TempDir {
         }
 
         for _ in 0..NUM_RETRIES {
-            let mut rng = rand::rng();
+            let rng = rand::rng();
             let suffix: String = rng.sample_iter(&Alphanumeric).take(NUM_RAND_CHARS).map(char::from).collect();
             let leaf = if !prefix.is_empty() {
                 format!("{}.{}", prefix, suffix)
